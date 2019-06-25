@@ -17,6 +17,10 @@
 #include "absl/debugging/failure_signal_handler.h"
 
 #include "absl/base/config.h"
+#include <iostream>
+#include <unistd.h>
+#include <sys/syscall.h>
+#define gettid() syscall(SYS_gettid)
 
 #ifdef _WIN32
 #include <windows.h>
@@ -210,6 +214,7 @@ static void WriteToStderr(const char* data) {
 }
 
 static void WriteSignalMessage(int signo, void (*writerfn)(const char*)) {
+  std::cerr << "Thread ID in Signal Handler:" << gettid() << std::endl;
   char buf[64];
   const char* const signal_string =
       debugging_internal::FailureSignalToString(signo);

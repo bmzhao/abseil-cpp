@@ -23,6 +23,9 @@
 #include <fstream>
 
 #include <iostream>
+#include <unistd.h>
+#include <sys/syscall.h>
+#define gettid() syscall(SYS_gettid)
 
 #include "gtest/gtest.h"
 #include "absl/base/internal/raw_logging.h"
@@ -50,13 +53,17 @@ void InstallHandlerAndRaise(int signo) {
 // https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/platform/stacktrace_handler_test.cc#L32
 // ABSL stacktrace is: 
 // [ RUN      ] StacktraceHandlerTest.GeneratesStacktraceFails
-// Output from the child process:*** SIGABRT received at time=1561409570 ***
-// PC: @     0x7faef9c1cff4  (unknown)  (unknown)
-//     @     0x7faefac72807         64  absl::WriteFailureInfo()
-//     @     0x7faefac729a9         96  absl::AbslFailureSignalHandler()
-//     @     0x7faef9f283a0  (unknown)  (unknown)
-// absl/debugging/failure_signal_handler_test.cc:99: Failure
+// Output from the child process:
+// Child Process Thread ID is: 20
+// Thread ID in Signal Handler:20
+// *** SIGABRT received at time=1561423902 ***
+// PC: @     0x7f57d108fff4  (unknown)  (unknown)
+//     @     0x7f57d20e5b85         64  absl::WriteFailureInfo()
+//     @     0x7f57d20e5d27         96  absl::AbslFailureSignalHandler()
+//     @     0x7f57d139b3a0  (unknown)  (unknown)
+// absl/debugging/failure_signal_handler_test.cc:110: Failure
 // Expected: (child_output.find(test_stack_frame)) != (std::string::npos), actual: 18446744073709551615 vs 18446744073709551615
+// [  FAILED  ] StacktraceHandlerTest.GeneratesStacktraceFails (3003 ms)
 TEST(StacktraceHandlerTest, GeneratesStacktraceFails) {
   absl::InstallFailureSignalHandler(absl::FailureSignalHandlerOptions());
   // Create a pipe to write/read the child stdout.
@@ -72,13 +79,14 @@ TEST(StacktraceHandlerTest, GeneratesStacktraceFails) {
     close(test_pipe[0]);
     dup2(test_pipe[1], STDOUT_FILENO);
     dup2(test_pipe[1], STDERR_FILENO);
+    std::cerr << "\nChild Process Thread ID is: " << gettid() << std::endl;
     sleep(10);
   } else {
     // Parent process.
     // Close the write end of the pipe, wait a little and send SIGABRT to the
     // child process. Then watch the pipe.
     close(test_pipe[1]);
-    sleep(1);
+    sleep(3);
 
     // Send the signal.
     kill(test_pid, SIGABRT);
@@ -110,25 +118,28 @@ TEST(StacktraceHandlerTest, GeneratesStacktraceFails) {
 // After forking, child calls raise, parent waits on child.
 // ABSL stacktrace is: 
 // [ RUN      ] StacktraceHandlerTest.GeneratesStacktrace
-// Output from the child process:*** SIGABRT received at time=1561409570 ***
-// PC: @     0x7faef9f2823b  (unknown)  raise
-//     @     0x7faefac72807         64  absl::WriteFailureInfo()
-//     @     0x7faefac729a9         96  absl::AbslFailureSignalHandler()
-//     @     0x7faef9f283a0  (unknown)  (unknown)
-//     @     0x7faefaba1311         48  testing::internal::HandleSehExceptionsInMethodIfSupported<>()
-//     @     0x7faefab9cb0f        144  testing::internal::HandleExceptionsInMethodIfSupported<>()
-//     @     0x7faefab8781e        112  testing::Test::Run()
-//     @     0x7faefab8816f        112  testing::TestInfo::Run()
-//     @     0x7faefab887ff        112  testing::TestSuite::Run()
-//     @     0x7faefab939cd         96  testing::internal::UnitTestImpl::RunAllTests()
-//     @     0x7faefaba238f         48  testing::internal::HandleSehExceptionsInMethodIfSupported<>()
-//     @     0x7faefab9d9b3        144  testing::internal::HandleExceptionsInMethodIfSupported<>()
-//     @     0x7faefab924dd        128  testing::UnitTest::Run()
-//     @     0x55c3ddb5d93c         16  RUN_ALL_TESTS()
-//     @     0x55c3ddb5c672         32  main
-//     @     0x7faef9b7a52b  (unknown)  (unknown)
+// Output from the child process:
+// Child Process, Thread ID: 21
+// Thread ID in Signal Handler:21
+// *** SIGABRT received at time=1561423902 ***
+// PC: @     0x7f57d139b23b  (unknown)  raise
+//     @     0x7f57d20e5b85         64  absl::WriteFailureInfo()
+//     @     0x7f57d20e5d27         96  absl::AbslFailureSignalHandler()
+//     @     0x7f57d139b3a0  (unknown)  (unknown)
+//     @     0x7f57d2014311         48  testing::internal::HandleSehExceptionsInMethodIfSupported<>()
+//     @     0x7f57d200fb0f        144  testing::internal::HandleExceptionsInMethodIfSupported<>()
+//     @     0x7f57d1ffa81e        112  testing::Test::Run()
+//     @     0x7f57d1ffb16f        112  testing::TestInfo::Run()
+//     @     0x7f57d1ffb7ff        112  testing::TestSuite::Run()
+//     @     0x7f57d20069cd         96  testing::internal::UnitTestImpl::RunAllTests()
+//     @     0x7f57d201538f         48  testing::internal::HandleSehExceptionsInMethodIfSupported<>()
+//     @     0x7f57d20109b3        144  testing::internal::HandleExceptionsInMethodIfSupported<>()
+//     @     0x7f57d20054dd        128  testing::UnitTest::Run()
+//     @     0x55be36470a64         16  RUN_ALL_TESTS()
+//     @     0x55be3646f79a         32  main
+//     @     0x7f57d0fed52b  (unknown)  (unknown)
 //     @ 0x41fd89415541f689  (unknown)  (unknown)
-// [       OK ] StacktraceHandlerTest.GeneratesStacktrace (10 ms)
+// [       OK ] StacktraceHandlerTest.GeneratesStacktrace (9 ms)
 TEST(StacktraceHandlerTest, GeneratesStacktrace) {
   absl::InstallFailureSignalHandler(absl::FailureSignalHandlerOptions());
   // Create a pipe to write/read the child stdout.
@@ -144,6 +155,7 @@ TEST(StacktraceHandlerTest, GeneratesStacktrace) {
     close(test_pipe[0]);
     dup2(test_pipe[1], STDOUT_FILENO);
     dup2(test_pipe[1], STDERR_FILENO);
+    std::cerr << "\nChild Process, Thread ID: " << gettid() << std::endl;
     raise(SIGABRT);
   } else {
     // Parent process.
