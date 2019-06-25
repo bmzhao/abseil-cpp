@@ -33,7 +33,8 @@
 #if !defined(NO_FRAME_POINTER)
 # if defined(__i386__) || defined(__x86_64__)
 #define ABSL_STACKTRACE_INL_HEADER \
-    "absl/debugging/internal/stacktrace_x86-inl.inc"
+    "absl/debugging/internal/stacktrace_generic-inl.inc"
+    // "absl/debugging/internal/stacktrace_x86-inl.inc"
 # elif defined(__ppc__) || defined(__PPC__)
 #define ABSL_STACKTRACE_INL_HEADER \
     "absl/debugging/internal/stacktrace_powerpc-inl.inc"

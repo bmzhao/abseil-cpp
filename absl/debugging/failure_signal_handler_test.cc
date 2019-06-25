@@ -64,7 +64,7 @@ void InstallHandlerAndRaise(int signo) {
 // absl/debugging/failure_signal_handler_test.cc:110: Failure
 // Expected: (child_output.find(test_stack_frame)) != (std::string::npos), actual: 18446744073709551615 vs 18446744073709551615
 // [  FAILED  ] StacktraceHandlerTest.GeneratesStacktraceFails (3003 ms)
-TEST(StacktraceHandlerTest, GeneratesStacktraceFails) {
+TEST(StacktraceHandlerTest, GeneratesStacktraceFailsWithWaitAlso) {
   absl::InstallFailureSignalHandler(absl::FailureSignalHandlerOptions());
   // Create a pipe to write/read the child stdout.
   int test_pipe[2];
@@ -90,6 +90,9 @@ TEST(StacktraceHandlerTest, GeneratesStacktraceFails) {
 
     // Send the signal.
     kill(test_pid, SIGABRT);
+    
+    int status;
+    wait(&status);
 
     // Read from the pipe.
     char buffer[READ_BUFFER_SIZE];
