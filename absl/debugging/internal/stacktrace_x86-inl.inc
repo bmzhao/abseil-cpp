@@ -17,6 +17,8 @@
 #ifndef ABSL_DEBUGGING_INTERNAL_STACKTRACE_X86_INL_INC_
 #define ABSL_DEBUGGING_INTERNAL_STACKTRACE_X86_INL_INC_
 
+#include <iostream>
+
 #if defined(__linux__) && (defined(__i386__) || defined(__x86_64__))
 #include <ucontext.h>  // for ucontext_t
 #endif
@@ -253,13 +255,23 @@ static void **NextStackFrame(void **old_fp, const void *uc) {
     if (new_fp_u <= old_fp_u) return nullptr;
     if (new_fp_u - old_fp_u > kMaxFrameBytes) return nullptr;
   } else {
-    if (new_fp == nullptr) return nullptr;  // skip AddressIsReadable() below
+    if (new_fp == nullptr) {
+      std::cerr << "IN stacktrace_x86-inl.inc[NextStackFrame]. NewFP = nullptr. OldFP = " << old_fp_u << std::endl;
+      return nullptr;  // skip AddressIsReadable() below
+    }
     // In the non-strict mode, allow discontiguous stack frames.
     // (alternate-signal-stacks for example).
-    if (new_fp == old_fp) return nullptr;
+    if (new_fp == old_fp) {
+      std::cerr << "IN stacktrace_x86-inl.inc[NextStackFrame]. NewFP = OldFP. NewFP = " << new_fp_u << std::endl;
+      return nullptr;
+    }
   }
 
-  if (new_fp_u & (sizeof(void *) - 1)) return nullptr;
+  if (new_fp_u & (sizeof(void *) - 1)) {
+    std::cerr << "IN stacktrace_x86-inl.inc[NextStackFrame]. NewFP & (sizeof(void *) - 1)." << std::endl;
+    std::cerr << "New FP = " << new_fp_u << "\n(sizeof(void *) - 1) = " << (sizeof(void *) - 1) << "\nResult is = " << (new_fp_u & (sizeof(void *) - 1)) << std::endl;
+    return nullptr;
+  }
 #ifdef __i386__
   // On 32-bit machines, the stack pointer can be very close to
   // 0xffffffff, so we explicitly check for a pointer into the
@@ -275,6 +287,7 @@ static void **NextStackFrame(void **old_fp, const void *uc) {
     //       is already on its last leg, so it's ok to be slow here.
 
     if (!absl::debugging_internal::AddressIsReadable(new_fp)) {
+      std::cerr << "IN stacktrace_x86-inl.inc[NextStackFrame]. Address NewFP was not readable. NewFP = " << new_fp_u << std::endl;
       return nullptr;
     }
   }
@@ -289,10 +302,14 @@ ABSL_ATTRIBUTE_NOINLINE
 static int UnwindImpl(void **result, int *sizes, int max_depth, int skip_count,
                       const void *ucp, int *min_dropped_frames) {
   int n = 0;
+  // __builtin_frame_address returns current functin's frame address as void*
+  // why do we reinterpret to void**?
   void **fp = reinterpret_cast<void **>(__builtin_frame_address(0));
 
   while (fp && n < max_depth) {
+    std::cerr << "IN stacktrace_x86-inl.inc[UnwindImpl] Loop. FP = " << (uintptr_t)fp << " and n = " << n << std::endl;
     if (*(fp + 1) == reinterpret_cast<void *>(0)) {
+      std::cerr << "IN stacktrace_x86-inl.inc[UnwindImpl]. Return Address was NULL." << std::endl;
       // In 64-bit code, we often see a frame that
       // points to itself and has a return address of 0.
       break;
@@ -314,6 +331,7 @@ static int UnwindImpl(void **result, int *sizes, int max_depth, int skip_count,
     }
     fp = next_fp;
   }
+  std::cerr << "IN stacktrace_x86-inl.inc[UnwindImpl]. N (num frames captured)= " << n << std::endl;
   if (min_dropped_frames != nullptr) {
     // Implementation detail: we clamp the max of frames we are willing to
     // count, so as not to spend too much time in the loop below.

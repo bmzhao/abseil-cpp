@@ -256,6 +256,7 @@ ABSL_ATTRIBUTE_NOINLINE static void WriteStackTrace(
       stack, frame_sizes, kNumStackFrames,
       1,  // Do not include this function in stack trace.
       ucontext, &min_dropped_frames);
+  std::cerr << "IN failure_signal_handler.cc[WriteStackTrace] The depth is " << depth << std::endl;
   absl::debugging_internal::DumpPCAndFrameSizesAndStackTrace(
       absl::debugging_internal::GetProgramCounter(ucontext), stack, frame_sizes,
       depth, min_dropped_frames, symbolize_stacktrace, writerfn, writerfn_arg);

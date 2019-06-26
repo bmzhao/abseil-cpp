@@ -1,0 +1,98 @@
+exec ${PAGER:-/usr/bin/less} "$0" || exit 1
+Executing tests from //absl/debugging:failure_signal_handler_test
+-----------------------------------------------------------------------------
+[==========] Running 7 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 5 tests from AbslDeathTest/FailureSignalHandlerDeathTest
+[ RUN      ] AbslDeathTest/FailureSignalHandlerDeathTest.AbslFailureSignal/SIGSEGV
+[       OK ] AbslDeathTest/FailureSignalHandlerDeathTest.AbslFailureSignal/SIGSEGV (9 ms)
+[ RUN      ] AbslDeathTest/FailureSignalHandlerDeathTest.AbslFailureSignal/SIGILL
+[       OK ] AbslDeathTest/FailureSignalHandlerDeathTest.AbslFailureSignal/SIGILL (10 ms)
+[ RUN      ] AbslDeathTest/FailureSignalHandlerDeathTest.AbslFailureSignal/SIGFPE
+[       OK ] AbslDeathTest/FailureSignalHandlerDeathTest.AbslFailureSignal/SIGFPE (7 ms)
+[ RUN      ] AbslDeathTest/FailureSignalHandlerDeathTest.AbslFailureSignal/SIGABRT
+[       OK ] AbslDeathTest/FailureSignalHandlerDeathTest.AbslFailureSignal/SIGABRT (10 ms)
+[ RUN      ] AbslDeathTest/FailureSignalHandlerDeathTest.AbslFailureSignal/SIGTERM
+[       OK ] AbslDeathTest/FailureSignalHandlerDeathTest.AbslFailureSignal/SIGTERM (6 ms)
+[----------] 5 tests from AbslDeathTest/FailureSignalHandlerDeathTest (42 ms total)
+
+[----------] 2 tests from StacktraceHandlerTest
+[ RUN      ] StacktraceHandlerTest.GeneratesStacktraceFailsWithWaitAlso
+Output from the child process:
+Child Process Thread ID is: 20
+Thread ID in Signal Handler:20
+*** SIGABRT received at time=1561577389 ***
+IN stacktrace_x86-inl.inc[UnwindImpl] Loop. FP = 140193569855424 and n = 0
+IN stacktrace_x86-inl.inc[UnwindImpl] Loop. FP = 140193569855552 and n = 0
+IN stacktrace_x86-inl.inc[UnwindImpl] Loop. FP = 140193569856016 and n = 0
+IN stacktrace_x86-inl.inc[UnwindImpl] Loop. FP = 140193569856080 and n = 1
+IN stacktrace_x86-inl.inc[UnwindImpl] Loop. FP = 140193569856176 and n = 2
+IN stacktrace_x86-inl.inc[NextStackFrame]. NewFP & (sizeof(void *) - 1).
+New FP = 25
+(sizeof(void *) - 1) = 7
+Result is = 1
+IN stacktrace_x86-inl.inc[UnwindImpl]. N (num frames captured)= 3
+IN failure_signal_handler.cc[WriteStackTrace] The depth is 3
+PC: @     0x7f815b04dff4  (unknown)  (unknown)
+    @     0x7f815c0a3c13         64  absl::WriteFailureInfo()
+    @     0x7f815c0a3db5         96  absl::AbslFailureSignalHandler()
+    @     0x7f815b3593a0  (unknown)  (unknown)
+absl/debugging/failure_signal_handler_test.cc:117: Failure
+Expected: (child_output.find(test_stack_frame)) != (std::string::npos), actual: 18446744073709551615 vs 18446744073709551615
+[  FAILED  ] StacktraceHandlerTest.GeneratesStacktraceFailsWithWaitAlso (3002 ms)
+[ RUN      ] StacktraceHandlerTest.GeneratesStacktrace
+Output from the child process:
+Child Process, Thread ID: 21
+Thread ID in Signal Handler:21
+*** SIGABRT received at time=1561577389 ***
+IN stacktrace_x86-inl.inc[UnwindImpl] Loop. FP = 140193569855424 and n = 0
+IN stacktrace_x86-inl.inc[UnwindImpl] Loop. FP = 140193569855552 and n = 0
+IN stacktrace_x86-inl.inc[UnwindImpl] Loop. FP = 140193569856016 and n = 0
+IN stacktrace_x86-inl.inc[UnwindImpl] Loop. FP = 140193569856080 and n = 1
+IN stacktrace_x86-inl.inc[UnwindImpl] Loop. FP = 140193569856176 and n = 2
+IN stacktrace_x86-inl.inc[UnwindImpl] Loop. FP = 140720915990736 and n = 3
+IN stacktrace_x86-inl.inc[UnwindImpl] Loop. FP = 140720915990784 and n = 4
+IN stacktrace_x86-inl.inc[UnwindImpl] Loop. FP = 140720915990928 and n = 5
+IN stacktrace_x86-inl.inc[UnwindImpl] Loop. FP = 140720915991040 and n = 6
+IN stacktrace_x86-inl.inc[UnwindImpl] Loop. FP = 140720915991152 and n = 7
+IN stacktrace_x86-inl.inc[UnwindImpl] Loop. FP = 140720915991264 and n = 8
+IN stacktrace_x86-inl.inc[UnwindImpl] Loop. FP = 140720915991360 and n = 9
+IN stacktrace_x86-inl.inc[UnwindImpl] Loop. FP = 140720915991408 and n = 10
+IN stacktrace_x86-inl.inc[UnwindImpl] Loop. FP = 140720915991552 and n = 11
+IN stacktrace_x86-inl.inc[UnwindImpl] Loop. FP = 140720915991680 and n = 12
+IN stacktrace_x86-inl.inc[UnwindImpl] Loop. FP = 140720915991696 and n = 13
+IN stacktrace_x86-inl.inc[UnwindImpl] Loop. FP = 140720915991728 and n = 14
+IN stacktrace_x86-inl.inc[UnwindImpl] Loop. FP = 94059309783472 and n = 15
+IN stacktrace_x86-inl.inc[NextStackFrame]. NewFP & (sizeof(void *) - 1).
+New FP = 5284483606742914881
+(sizeof(void *) - 1) = 7
+Result is = 1
+IN stacktrace_x86-inl.inc[UnwindImpl]. N (num frames captured)= 16
+IN failure_signal_handler.cc[WriteStackTrace] The depth is 16
+PC: @     0x7f815b35923b  (unknown)  raise
+    @     0x7f815c0a3c13         64  absl::WriteFailureInfo()
+    @     0x7f815c0a3db5         96  absl::AbslFailureSignalHandler()
+    @     0x7f815b3593a0  (unknown)  (unknown)
+    @     0x7f815bfd1311         48  testing::internal::HandleSehExceptionsInMethodIfSupported<>()
+    @     0x7f815bfccb0f        144  testing::internal::HandleExceptionsInMethodIfSupported<>()
+    @     0x7f815bfb781e        112  testing::Test::Run()
+    @     0x7f815bfb816f        112  testing::TestInfo::Run()
+    @     0x7f815bfb87ff        112  testing::TestSuite::Run()
+    @     0x7f815bfc39cd         96  testing::internal::UnitTestImpl::RunAllTests()
+    @     0x7f815bfd238f         48  testing::internal::HandleSehExceptionsInMethodIfSupported<>()
+    @     0x7f815bfcd9b3        144  testing::internal::HandleExceptionsInMethodIfSupported<>()
+    @     0x7f815bfc24dd        128  testing::UnitTest::Run()
+    @     0x558be3beca74         16  RUN_ALL_TESTS()
+    @     0x558be3beb7aa         32  main
+    @     0x7f815afab52b  (unknown)  (unknown)
+    @ 0x41fd89415541f689  (unknown)  (unknown)
+[       OK ] StacktraceHandlerTest.GeneratesStacktrace (10 ms)
+[----------] 2 tests from StacktraceHandlerTest (3012 ms total)
+
+[----------] Global test environment tear-down
+[==========] 7 tests from 2 test suites ran. (3054 ms total)
+[  PASSED  ] 6 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] StacktraceHandlerTest.GeneratesStacktraceFailsWithWaitAlso
+
+ 1 FAILED TEST

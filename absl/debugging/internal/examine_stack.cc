@@ -15,6 +15,7 @@
 //
 
 #include "absl/debugging/internal/examine_stack.h"
+#include <iostream>
 
 #ifndef _WIN32
 #include <unistd.h>
