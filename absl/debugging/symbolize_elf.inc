@@ -125,6 +125,8 @@ const size_t kFunctionDescriptorSize = sizeof(void *) * 2;
 
 const int kMaxDecorators = 10;  // Seems like a reasonable upper limit.
 
+constexpr uint32_t kSymbolTableTypes[] = { SHT_SYMTAB, SHT_DYNSYM };
+
 struct InstalledSymbolDecorator {
   SymbolDecorator fn;
   void *arg;
@@ -762,37 +764,26 @@ FindSymbolResult Symbolizer::GetSymbolFromObjectFile(
     }
   }
 
-  // Consult a regular symbol table first.
-  if (!GetSectionHeaderByType(obj.fd, obj.elf_header.e_shnum,
-                              obj.elf_header.e_shoff, SHT_SYMTAB, &symtab,
-                              tmp_buf, tmp_buf_size)) {
-    return SYMBOL_NOT_FOUND;
+  // Consult a regular symbol table, then fall back to the dynamic symbol table.  
+  for (uint32_t symbol_table_type: kSymbolTableTypes) {
+    if (!GetSectionHeaderByType(obj.fd, obj.elf_header.e_shnum,
+                                obj.elf_header.e_shoff, symbol_table_type, 
+                                &symtab, tmp_buf, tmp_buf_size)) {
+      continue;
+    }
+    if (!ReadFromOffsetExact(
+            obj.fd, &strtab, sizeof(strtab),
+            obj.elf_header.e_shoff + symtab.sh_link * sizeof(symtab))) {
+      continue;
+    }
+    const FindSymbolResult rc =
+        FindSymbol(pc, obj.fd, out, out_size, relocation, &strtab, &symtab,
+                  opd_ptr, tmp_buf, tmp_buf_size);
+    if (rc != SYMBOL_NOT_FOUND) {
+      return rc;
+    }
   }
-  if (!ReadFromOffsetExact(
-          obj.fd, &strtab, sizeof(strtab),
-          obj.elf_header.e_shoff + symtab.sh_link * sizeof(symtab))) {
-    return SYMBOL_NOT_FOUND;
-  }
-  const FindSymbolResult rc =
-      FindSymbol(pc, obj.fd, out, out_size, relocation, &strtab, &symtab,
-                 opd_ptr, tmp_buf, tmp_buf_size);
-  if (rc != SYMBOL_NOT_FOUND) {
-    return rc;  // Found the symbol in a regular symbol table.
-  }
-
-  // If the symbol is not found, then consult a dynamic symbol table.
-  if (!GetSectionHeaderByType(obj.fd, obj.elf_header.e_shnum,
-                              obj.elf_header.e_shoff, SHT_DYNSYM, &symtab,
-                              tmp_buf, tmp_buf_size)) {
-    return SYMBOL_NOT_FOUND;
-  }
-  if (!ReadFromOffsetExact(
-          obj.fd, &strtab, sizeof(strtab),
-          obj.elf_header.e_shoff + symtab.sh_link * sizeof(symtab))) {
-    return SYMBOL_NOT_FOUND;
-  }
-  return FindSymbol(pc, obj.fd, out, out_size, relocation, &strtab, &symtab,
-                    opd_ptr, tmp_buf, tmp_buf_size);
+  return SYMBOL_NOT_FOUND;
 }
 
 namespace {
